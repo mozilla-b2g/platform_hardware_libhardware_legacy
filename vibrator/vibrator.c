@@ -21,11 +21,17 @@
 #include <fcntl.h>
 #include <errno.h>
 
-#define THE_DEVICE "/sys/class/timed_output/vibrator/enable"
+static const char *vibrator_sysfs[] = {
+    "/sys/class/input/event1/device/device/vibrator_enable",
+    "/sys/class/input/event2/device/device/vibrator_enable",
+    "/sys/class/timed_output/vibrator/enable",
+};
+
+static int vibrator_index = -1;
 
 int vibrator_exists()
 {
-    int fd;
+    int i, fd;
 
 #ifdef QEMU_HARDWARE
     if (qemu_check()) {
@@ -33,11 +39,16 @@ int vibrator_exists()
     }
 #endif
 
-    fd = open(THE_DEVICE, O_RDWR);
-    if(fd < 0)
-        return 0;
-    close(fd);
-    return 1;
+    for (i = 0; i < (sizeof(vibrator_sysfs) / sizeof(const char *)); i++) {
+        fd = open(vibrator_sysfs[i], O_RDWR);
+        if (fd >= 0) {
+			vibrator_index = i;
+			close(fd);
+			return 1;
+		}
+	}
+
+    return 0;
 }
 
 static int sendit(int timeout_ms)
@@ -51,16 +62,31 @@ static int sendit(int timeout_ms)
     }
 #endif
 
-    fd = open(THE_DEVICE, O_RDWR);
-    if(fd < 0)
-        return errno;
+    if (vibrator_index < 0)
+	return -1;
 
-    nwr = sprintf(value, "%d\n", timeout_ms);
+    fd = open(vibrator_sysfs[vibrator_index], O_RDWR);
+    if (fd < 0)
+		return errno;
+
+    nwr = sprintf(value, "%d\n", 1);
     ret = write(fd, value, nwr);
+    if (ret < 0) {
+		close(fd);
+		return ret;
+    }
+
+    usleep(timeout_ms * 1000);
+
+    nwr = sprintf(value, "%d\n", 0);
+    ret = write(fd, value, nwr);
+    if (ret < 0) {
+	close(fd);
+	return ret;
+    }
 
     close(fd);
-
-    return (ret == nwr) ? 0 : -1;
+    return 0;
 }
 
 int vibrator_on(int timeout_ms)
