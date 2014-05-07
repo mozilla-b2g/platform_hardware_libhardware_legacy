@@ -49,7 +49,7 @@ extern int delete_module(const char *, unsigned int);
 void wifi_close_sockets();
 
 #ifndef LIBWPA_CLIENT_EXISTS
-#define WPA_EVENT_TERMINATING "CTRL-EVENT-TERMINATING "
+#define WPA_EVENT_TERMINATING "IFNAME=wlan0 CTRL-EVENT-TERMINATING "
 struct wpa_ctrl {};
 void wpa_ctrl_cleanup(void) {}
 struct wpa_ctrl *wpa_ctrl_open(const char *ctrl_path) { return NULL; }
@@ -665,6 +665,16 @@ int wifi_connect_to_supplicant()
     return wifi_connect_on_socket_path(path);
 }
 
+bool wifi_supplicant_connection_active()
+{
+    char cmd_reply[5];
+    size_t resp_len = 5;
+    int res;
+
+    res = wifi_send_command("PING", cmd_reply, &resp_len);
+    return ((res < 0)? false : true);
+}
+
 int wifi_send_command(const char *cmd, char *reply, size_t *reply_len)
 {
     int ret;
@@ -698,17 +708,29 @@ int wifi_ctrl_recv(char *reply, size_t *reply_len)
     rfds[0].events |= POLLIN;
     rfds[1].fd = exit_sockets[1];
     rfds[1].events |= POLLIN;
-    res = TEMP_FAILURE_RETRY(poll(rfds, 2, -1));
-    if (res < 0) {
-        ALOGE("Error poll = %d", res);
-        return res;
-    }
+    do {
+        res = TEMP_FAILURE_RETRY(poll(rfds, 2, 30000));
+        if (res < 0) {
+            ALOGE("Error poll = %d", res);
+            return res;
+        } else if (res == 0) {
+            /* timed out, check if supplicant is active
+             * or not ..
+             */
+            if (wifi_supplicant_connection_active())
+                continue;
+
+            /*supplicant connection closed, need supplicant restart*/
+            return -2;
+        }
+    } while (res == 0);
+
     if (rfds[0].revents & POLLIN) {
         return wpa_ctrl_recv(monitor_conn, reply, reply_len);
     }
 
     /* it is not rfds[0], then it must be rfts[1] (i.e. the exit socket)
-     * or we timed out. In either case, this call has failed ..
+     * this call has failed ..
      */
     return -2;
 }
