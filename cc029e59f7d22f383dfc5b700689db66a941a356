@@ -1,0 +1,9 @@
+Code-Review+1: David Wagner <david.wagner@intel.com>
+Code-Review+2: Eric Laurent <elaurent@google.com>
+Verified+1: Deckard Autoverifier <deckard@android.com>
+Code-Review+1: Yong Yao <yong.yao@intel.com>
+Submitted-by: Eric Laurent <elaurent@google.com>
+Submitted-at: Wed, 07 May 2014 23:34:19 +0000
+Reviewed-on: https://android-review.googlesource.com/91932
+Project: platform/hardware/libhardware_legacy
+Branch: refs/heads/master
