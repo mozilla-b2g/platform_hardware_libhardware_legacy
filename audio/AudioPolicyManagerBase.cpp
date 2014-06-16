@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2009 The Android Open Source Project
+ * Copyright (C) 2014 Tieto Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2731,6 +2732,15 @@ audio_devices_t AudioPolicyManagerBase::getDeviceForInputSource(int inputSource)
             device = AUDIO_DEVICE_IN_REMOTE_SUBMIX;
         }
         break;
+
+#ifdef BLUETOOTH_A2DP_SINK
+    case AUDIO_SOURCE_BLUETOOTH_A2DP:
+        if (mAvailableInputDevices & AUDIO_DEVICE_IN_BLUETOOTH_A2DP) {
+            device = AUDIO_DEVICE_IN_BLUETOOTH_A2DP;
+        }
+        break;
+#endif
+
     default:
         ALOGW("getDeviceForInputSource() invalid input source %d", inputSource);
         break;
@@ -3670,6 +3680,9 @@ const struct StringToEnum sDeviceNameToEnumTable[] = {
     STRING_TO_ENUM(AUDIO_DEVICE_IN_DGTL_DOCK_HEADSET),
     STRING_TO_ENUM(AUDIO_DEVICE_IN_USB_ACCESSORY),
     STRING_TO_ENUM(AUDIO_DEVICE_IN_USB_DEVICE),
+#ifdef BLUETOOTH_A2DP_SINK
+    STRING_TO_ENUM(AUDIO_DEVICE_IN_BLUETOOTH_A2DP),
+#endif
 };
 
 const struct StringToEnum sFlagNameToEnumTable[] = {
