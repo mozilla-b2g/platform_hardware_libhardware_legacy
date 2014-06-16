@@ -28,6 +28,10 @@ ifeq ($(AUDIO_POLICY_TEST),true)
   LOCAL_CFLAGS += -DAUDIO_POLICY_TEST
 endif
 
+ifeq ($(BLUETOOTH_A2DP_SINK),true)
+  LOCAL_CFLAGS += -DBLUETOOTH_A2DP_SINK
+endif
+
 LOCAL_STATIC_LIBRARIES := libmedia_helper
 LOCAL_MODULE := libaudiopolicy_legacy
 LOCAL_MODULE_TAGS := optional
